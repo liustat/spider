@@ -1,1 +1,65 @@
 # spider
+#coding:utf-8
+import sys
+from lxml import etree
+reload(sys)
+sys.setdefaultencoding('utf-8')
+import spiderDb
+import spiderCore
+import spiderSetting
+import spider_opt
+import urllib
+import MySQLdb
+
+def crawl(key,bz,channelname):
+    db_ip = 'ali.yufan.space'
+    db_username = 'spider'
+    db_password = 'spider'
+    db_name = 'spider'
+    db = MySQLdb.connect(db_ip, db_username, db_password, db_name, charset="utf8")
+    cursor = db.cursor()
+    cursor.execute("select hearder,channelCode from web_channel where channel='" + channelname + "'")
+    result=cursor.fetchone()
+    sendheader = eval(result[0])
+    channel=result[1]
+    db.close()
+    for mmm in range(2):
+        try:
+            url = 'http://hellogif.cn/picture/more?keyword=' + urllib.quote(key) + '&sort=&cid=&page=' + str(mmm + 1)
+            a = spiderCore.spiderCore(url, sendheader)
+            print a.getResult()
+            tree = etree.HTML(a.getResult())
+            nodesimg = tree.xpath(u"//a[@class='ui image segment']")
+            nodestext = tree.xpath(u"//div[@class='content']")
+            print url
+            for i in range(len(nodesimg)):
+                texts = []
+                imgurl = nodesimg[i].attrib['gif-url'].split('?')[0]
+                nodes = nodestext[i].xpath(".//a")
+                for text in nodes:
+                    text1 = text.text.encode('latin1').replace('#', '')
+                    texts.append(text1)
+                texts = ','.join(texts)
+                print imgurl + '\t\t' + texts
+                title=''
+                channel='WBYUN_hellogif'
+                imagesource=''
+                imagetype='gif'
+                spider_opt.uploadcore(imgurl,texts,title,channel,imagesource,key,imagetype,bz)
+        except Exception, e:
+            print e
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
